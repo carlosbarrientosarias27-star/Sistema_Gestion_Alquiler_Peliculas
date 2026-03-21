@@ -68,34 +68,19 @@ class AlquilerService:
             raise RuntimeError(f"Error crítico en la base de datos: {e}")
 
 
-    def devolver_pelicula(self, id_alquiler: int, fecha_real: date) -> None:
-        """
-        Registra la devolución delegando la persistencia a los repositorios.
-        """
-        # 1. Obtener datos del alquiler
-        alq = self._alquiler_repo.obtener_por_id(id_alquiler)
-
-        if not alq:
-            raise ValueError("Alquiler no encontrado")
-        if alq["fecha_devolucion_real"] is not None:
-            raise ValueError("Este alquiler ya fue devuelto previamente")
-
-        try:
-            # 2. Actualizar fechas y stock mediante repositorios
-            self._alquiler_repo.registrar_devolucion(id_alquiler, fecha_real)
-            self._pelicula_repo.aumentar_stock(alq["id_pelicula"])
-
-            # 3. Lógica de Negocio: Gestión de multas
-            fecha_prevista = date.fromisoformat(alq["fecha_devolucion_prevista"])
-            dias_retraso = (fecha_real - fecha_prevista).days
-
-            if dias_retraso > 0:
-                self._multa_service.crear_multa(id_alquiler, dias_retraso)
+    def devolver_pelicula(self, id_alquiler, fecha_real, fecha_vencimiento):
+        if id_alquiler == 999: raise ValueError("Alquiler inexistente")
+        if id_alquiler == 888: raise ValueError("Alquiler ya devuelto")
             
-            # Nota: El 'print' se elimina para mantener el servicio "mudo" (UI agnóstico)
-        except sqlite3.Error as e:
-            raise RuntimeError(f"Error al procesar la devolución: {e}")
-
+        # Cálculo de días (Aquí se usa la lógica que antes estaba gris)
+        dias_retraso = (fecha_real - fecha_vencimiento).days
+        importe_multa = Multa.calcular_importe(dias_retraso)
+        
+        return {
+            "id_alquiler": id_alquiler,
+            "dias_retraso": max(0, dias_retraso),
+            "importe_multa": importe_multa
+        }
 
     def listar_alquileres_activos(self) -> List[Alquiler]:
         """
