@@ -62,7 +62,14 @@ class Menu:
     def _opcion_devolver(self) -> None:
         try:
             id_alquiler = int(input("ID de alquiler: "))
-            fecha_real = date.today()
+
+            # ← CORRECCIÓN: se pide la fecha al usuario en lugar de asumir hoy
+            fecha_str = input("Fecha de devolución (AAAA-MM-DD) [Enter = hoy]: ").strip()
+            if fecha_str == "":
+                fecha_real = date.today()
+            else:
+                fecha_real = date.fromisoformat(fecha_str)  # ValueError si formato incorrecto
+
             self._alquiler_service.devolver_pelicula(id_alquiler, fecha_real)
             print(f"\n✔ Devolución registrada el {fecha_real}.\n")
         except ValueError as e:

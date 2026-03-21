@@ -4,47 +4,45 @@ from video_club.models.alquiler import Alquiler
 from video_club.database.connection import get_connection
 from video_club.services.pelicula_service import PeliculaService
 from video_club.services.multa_service import MultaService
- 
- 
+
+
 class AlquilerService:
     """Servicio de gestión de alquileres."""
- 
-    def __init__(self):
+
+    def __init__(self, multa_service: MultaService = None):   # ← inyección
         self._pelicula_service = PeliculaService()
-        self._multa_service = MultaService()
- 
+        self._multa_service = multa_service or MultaService() # ← sin import circular
+
     def alquilar_pelicula(self, id_cliente: int, codigo: str, dias: int) -> Alquiler:
         """Crea un alquiler.
- 
+
         Input:
             id_cliente: int
             codigo: str
             dias: int
         Output:
             Alquiler
- 
+
         Casos límite:
             - Sin copias disponibles → ValueError
+            - Película no encontrada → ValueError
         """
         pelicula = self._pelicula_service.buscar_por_codigo(codigo)
         if pelicula is None:
             raise ValueError(f"Película con código '{codigo}' no encontrada.")
         if pelicula.copias_disponibles <= 0:
             raise ValueError(f"No hay copias disponibles de '{pelicula.titulo}'.")
- 
+
         hoy = date.today()
         fecha_devolucion = hoy + timedelta(days=dias)
- 
+
         conn = get_connection()
         cursor = conn.cursor()
- 
-        # Reducir copia disponible
+
         cursor.execute(
             "UPDATE pelicula SET copias_disponibles = copias_disponibles - 1 WHERE codigo = ?",
             (codigo,)
         )
- 
-        # Insertar alquiler
         cursor.execute(
             "INSERT INTO alquiler (id_cliente, codigo_pelicula, fecha_alquiler, "
             "fecha_devolucion_prevista, fecha_devolucion_real) VALUES (?,?,?,?,?)",
@@ -53,7 +51,7 @@ class AlquilerService:
         id_alquiler = cursor.lastrowid
         conn.commit()
         conn.close()
- 
+
         return Alquiler(
             id_alquiler=id_alquiler,
             id_cliente=id_cliente,
@@ -62,18 +60,19 @@ class AlquilerService:
             fecha_devolucion_prevista=fecha_devolucion,
             fecha_devolucion_real=None,
         )
- 
+
     def devolver_pelicula(self, id_alquiler: int, fecha_real: date) -> None:
         """Registra devolución y genera multa si hay retraso.
- 
+
         Input:
             id_alquiler: int
             fecha_real: date
         Output:
             None
- 
+
         Casos límite:
-            - Alquiler inexistente o ya devuelto → ValueError
+            - Alquiler inexistente → ValueError
+            - Alquiler ya devuelto → ValueError
         """
         conn = get_connection()
         cursor = conn.cursor()
@@ -83,39 +82,35 @@ class AlquilerService:
             (id_alquiler,)
         )
         fila = cursor.fetchone()
- 
+
         if fila is None:
             conn.close()
             raise ValueError(f"Alquiler {id_alquiler} no encontrado.")
         if fila[2] is not None:
             conn.close()
             raise ValueError(f"Alquiler {id_alquiler} ya fue devuelto.")
- 
+
         codigo_pelicula = fila[0]
         fecha_prevista = date.fromisoformat(fila[1])
- 
-        # Registrar devolución
+
         cursor.execute(
             "UPDATE alquiler SET fecha_devolucion_real = ? WHERE id_alquiler = ?",
             (fecha_real.isoformat(), id_alquiler)
         )
- 
-        # Recuperar copia
         cursor.execute(
             "UPDATE pelicula SET copias_disponibles = copias_disponibles + 1 WHERE codigo = ?",
             (codigo_pelicula,)
         )
         conn.commit()
         conn.close()
- 
-        # Calcular y guardar multa si aplica
+
         dias_retraso = (fecha_real - fecha_prevista).days
         if dias_retraso > 0:
             self._multa_service.calcular_multa(id_alquiler, dias_retraso)
- 
+
     def listar_alquileres_activos(self) -> List[Alquiler]:
         """Lista alquileres activos (sin fecha de devolución real).
- 
+
         Output:
             list[Alquiler]
         """
@@ -128,7 +123,7 @@ class AlquilerService:
         )
         filas = cursor.fetchall()
         conn.close()
- 
+
         return [
             Alquiler(
                 id_alquiler=f[0],
