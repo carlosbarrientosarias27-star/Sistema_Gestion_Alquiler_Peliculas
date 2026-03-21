@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Añadimos el directorio padre al path para que reconozca los paquetes
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from database.init_db import init_db
 from ui.menu import Menu
 

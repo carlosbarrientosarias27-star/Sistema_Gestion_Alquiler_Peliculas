@@ -2,8 +2,8 @@ import sqlite3
 from datetime import date, timedelta
 from typing import Optional, List
 
-from database.connection import obtener_conexion
-from models.alquiler import Alquiler
+from database.connection import get_connection
+from video_club.models.alquiler import Alquiler
 from .multa_service import MultaService
 
 class AlquilerService:
@@ -30,7 +30,7 @@ class AlquilerService:
         if dias <= 0:
             raise ValueError("Los días deben ser positivos")
 
-        with obtener_conexion() as conn:
+        with get_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
@@ -81,7 +81,7 @@ class AlquilerService:
             id_alquiler: ID del registro de alquiler.
             fecha_real: Fecha en la que se devuelve la película.
         """
-        with obtener_conexion() as conn:
+        with get_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
@@ -130,7 +130,7 @@ class AlquilerService:
         Output:
             list[Alquiler]: Lista de objetos Alquiler activos.
         """
-        with obtener_conexion() as conn:
+        with get_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM alquileres WHERE fecha_devolucion_real IS NULL")
@@ -147,7 +147,7 @@ class AlquilerService:
         Output:
             list[Alquiler]: Historial completo de alquileres.
         """
-        with obtener_conexion() as conn:
+        with get_connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM alquileres WHERE id_cliente = ?", (id_cliente,))

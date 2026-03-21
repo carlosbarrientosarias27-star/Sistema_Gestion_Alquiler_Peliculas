@@ -1,121 +1,188 @@
+import sys
 from datetime import date
-from services.alquiler_service import AlquilerService
-from services.pelicula_service import PeliculaService
-from services.cliente_service import ClienteService
+from video_club.services.alquiler_service import AlquilerService
+from video_club.services.pelicula_service import PeliculaService
+from video_club.services.cliente_service import ClienteService
+from ..services.multa_service import MultaService
 
-class Menu:
-    def __init__(self):
-        self._alquiler_service = AlquilerService()
-        self._pelicula_service = PeliculaService()
-        self._cliente_service = ClienteService()
+# Instanciación única de servicios
+_pelicula_service = PeliculaService()
+_cliente_service = ClienteService()
+_multa_service = MultaService()
+_alquiler_service = AlquilerService(multa_service=_multa_service)
 
-    def mostrar_menu(self) -> None:
-        print("""
-        1. Alquilar película      5. Listar alquileres activos
-        2. Devolver película      6. Registrar película (NUEVO)
-        3. Buscar película        7. Registrar cliente (NUEVO)
-        4. Buscar cliente         0. Salir
-        """)
+def ejecutar_menu() -> None:
+    """
+    Punto de entrada principal de la interfaz de consola. 
+    Gestiona el bucle principal y el despacho de opciones.
+    """
+    opciones: dict[str, Callable[[], None]] = {
+        "1": _añadir_pelicula,
+        "2": _listar_peliculas,
+        "3": _registrar_cliente,
+        "4": _listar_clientes,
+        "5": _realizar_alquiler,
+        "6": _realizar_devolucion,
+        "7": _ver_alquileres_activos,
+        "8": _ver_multas,
+        "9": _ver_historial_cliente,
+    }
 
-    def ejecutar(self) -> None:
-        while True:
-            self.mostrar_menu()
-            opcion = input("Selecciona una opción: ").strip()
-            
-            if opcion == "1": self._opcion_alquilar()
-            elif opcion == "2": self._opcion_devolver()
-            elif opcion == "3": self._opcion_buscar_pelicula()
-            elif opcion == "4": self._opcion_buscar_cliente()
-            elif opcion == "5": self._opcion_listar_activos()
-            elif opcion == "6": self._opcion_registrar_pelicula()
-            elif opcion == "7": self._opcion_registrar_cliente()
-            elif opcion == "0":
-                print("¡Hasta luego!")
-                break
-            else:
-                print("Opción no válida.")
- 
-    # ------------------------------------------------------------------ #
-    #  Opciones individuales                                               #
-    # ------------------------------------------------------------------ #
- 
-    def _opcion_alquilar(self) -> None:
-        try:
-            id_cliente = int(input("ID de cliente: "))
-            codigo = input("Código de película: ").strip()
-            dias = int(input("Días de alquiler: "))
-            alquiler = self._alquiler_service.alquilar_pelicula(id_cliente, codigo, dias)
-            print(f"\n✔ Alquiler registrado (ID {alquiler.id_alquiler}). "
-                  f"Devolver antes del {alquiler.fecha_devolucion_prevista}.\n")
-        except ValueError as e:
-            print(f"\n✘ Error: {e}\n")
- 
-    def _opcion_devolver(self) -> None:
-        try:
-            id_alquiler = int(input("ID de alquiler: "))
+    while True:
+        print("\n" + "=" * 10 + " 🎬 VIDEOCLUB " + "=" * 10)
+        print("1. Añadir película")
+        print("2. Listar películas")
+        print("3. Registrar cliente")
+        print("4. Listar clientes")
+        print("5. Alquilar película")
+        print("6. Devolver película")
+        print("7. Ver alquileres activos")
+        print("8. Ver multas")
+        print("9. Ver historial de cliente")
+        print("0. Salir")
+        
+        opcion = input("\nSeleccione una opción: ").strip()
 
-            # ← CORRECCIÓN: se pide la fecha al usuario en lugar de asumir hoy
-            fecha_str = input("Fecha de devolución (AAAA-MM-DD) [Enter = hoy]: ").strip()
-            if fecha_str == "":
-                fecha_real = date.today()
-            else:
-                fecha_real = date.fromisoformat(fecha_str)  # ValueError si formato incorrecto
-
-            self._alquiler_service.devolver_pelicula(id_alquiler, fecha_real)
-            print(f"\n✔ Devolución registrada el {fecha_real}.\n")
-        except ValueError as e:
-            print(f"\n✘ Error: {e}\n")
- 
-    def _opcion_buscar_pelicula(self) -> None:
-        codigo = input("Código de película: ").strip()
-        pelicula = self._pelicula_service.buscar_por_codigo(codigo)
-        if pelicula:
-            print(f"\n  Título:    {pelicula.titulo}")
-            print(f"  Director:  {pelicula.director}")
-            print(f"  Copias:    {pelicula.copias_disponibles}\n")
+        if opcion == "0":
+            print("\n¡Hasta pronto!")
+            break
+        
+        if opcion in opciones:
+            try:
+                opciones[opcion]()
+            except ValueError as e:
+                # Imprimir error en rojo (secuencia ANSI)
+                print(f"\033[91m\n❌ Error: {e}\033[0m")
+            except Exception as e:
+                print(f"\n[!] Error inesperado: {e}")
         else:
-            print("\n✘ Película no encontrada.\n")
- 
-    def _opcion_buscar_cliente(self) -> None:
-        try:
-            id_cliente = int(input("ID de cliente: "))
-            cliente = self._cliente_service.buscar_cliente(id_cliente)
-            if cliente:
-                print(f"\n  Nombre: {cliente.nombre}")
-                print(f"  Email:  {cliente.email}\n")
-            else:
-                print("\n✘ Cliente no encontrado.\n")
-        except ValueError:
-            print("\n✘ ID inválido.\n")
- 
-    def _opcion_listar_activos(self) -> None:
-        activos = self._alquiler_service.listar_alquileres_activos()
-        if not activos:
-            print("\n  No hay alquileres activos.\n")
-            return
-        print(f"\n  {'ID':>4}  {'Cliente':>8}  {'Película':<12}  {'Prevista'}")
-        print("  " + "-" * 44)
-        for a in activos:
-            print(f"  {a.id_alquiler:>4}  {a.id_cliente:>8}  "
-                  f"{a.codigo_pelicula:<12}  {a.fecha_devolucion_prevista}")
-        print()
-    
-    def _opcion_registrar_pelicula(self) -> None:
-        try:
-            c = input("Código: ").strip()
-            t = input("Título: ").strip()
-            d = input("Director: ").strip()
-            n = int(input("Copias: "))
-            self._pelicula_service.registrar_pelicula(c, t, d, n)
-            print("\n✔ Película registrada correctamente.\n")
-        except ValueError as e:
-            print(f"\n✘ Error: {e}\n")
+            print("\n⚠️ Opción no válida. Intente de nuevo.")
 
-    def _opcion_registrar_cliente(self) -> None:
-        try:
-            n = input("Nombre: ").strip()
-            e = input("Email: ").strip()
-            id_c = self._cliente_service.registrar_cliente(n, e)
-            print(f"\n✔ Cliente registrado con ID: {id_c}\n")
-        except ValueError as e:
-            print(f"\n✘ Error: {e}\n")
+# --- Funciones de Gestión de Películas ---
+
+def _añadir_pelicula() -> None:
+    """Solicita datos y delega la creación de una película."""
+    codigo = input("Código (ej: COD001): ").strip()
+    titulo = input("Título: ").strip()
+    director = input("Director: ").strip()
+    
+    try:
+        copias = int(input("Número de copias: "))
+        if copias <= 0:
+            raise ValueError("El número de copias debe ser mayor a 0.")
+    except ValueError:
+        raise ValueError("Debe ingresar un número entero válido para las copias.")
+
+    _pelicula_service.registrar_pelicula(codigo, titulo, director, copias)
+    print("\n✅ Película añadida correctamente.")
+
+def _listar_peliculas() -> None:
+    """Muestra todas las películas registradas."""
+    peliculas = _pelicula_service.listar_peliculas()
+    if not peliculas:
+        print("\nNo hay películas registradas.")
+    else:
+        print("\n--- Catálogo de Películas ---")
+        for p in peliculas:
+            print(p)
+
+# --- Funciones de Gestión de Clientes ---
+
+def _registrar_cliente() -> None:
+    """Solicita datos para registrar un nuevo cliente."""
+    nombre = input("Nombre completo: ").strip()
+    email = input("Email: ").strip()
+    
+    if not nombre or not email:
+        raise ValueError("El nombre y el email son obligatorios.")
+
+    _cliente_service.registrar_cliente(nombre, email)
+    print("\n✅ Cliente registrado correctamente.")
+
+def _listar_clientes() -> None:
+    """Muestra todos los clientes registrados."""
+    clientes = _cliente_service.listar_clientes()
+    if not clientes:
+        print("\nNo hay clientes registrados.")
+    else:
+        print("\n--- Lista de Clientes ---")
+        for c in clientes:
+            print(c)
+
+# --- Funciones de Gestión de Alquileres ---
+
+def _realizar_alquiler() -> None:
+    """Procesa un nuevo alquiler validando inputs numéricos."""
+    try:
+        id_cliente = int(input("ID del cliente: "))
+        codigo_peli = input("Código de la película: ").strip()
+        dias = int(input("Número de días: "))
+        
+        if dias <= 0:
+            raise ValueError("Los días deben ser un número positivo.")
+            
+        alquiler = _alquiler_service.alquilar_pelicula(id_cliente, codigo_peli, dias)
+        print(f"\n✅ Alquiler registrado: {alquiler}")
+    except ValueError as e:
+        if "invalid literal for int()" in str(e):
+            raise ValueError("El ID y los días deben ser números enteros.")
+        raise e
+
+def _realizar_devolucion() -> None:
+    """Registra la devolución y notifica si se generó una multa."""
+    try:
+        id_alquiler = int(input("ID del alquiler: "))
+    except ValueError:
+        raise ValueError("El ID de alquiler debe ser un número entero.")
+
+    # Se usa la fecha actual según el requerimiento
+    fecha_hoy = date.today()
+    
+    # Devolver_pelicula en AlquilerService ya maneja la lógica de multas internamente
+    _alquiler_service.devolver_pelicula(id_alquiler, fecha_hoy)
+    
+    # Verificamos si se creó una multa para informar al usuario
+    multas = _multa_service.obtener_multas_por_alquiler(id_alquiler)
+    if multas:
+        # Mostramos la última multa generada para ese alquiler
+        m = multas[-1]
+        print(f"⚠️ Devolución con retraso. Multa: {m.importe:.2f}€")
+    else:
+        print("✅ Devolución registrada correctamente.")
+
+def _ver_alquileres_activos() -> None:
+    """Lista los alquileres que aún no han sido devueltos."""
+    activos = _alquiler_service.listar_alquileres_activos()
+    if not activos:
+        print("\nNo hay alquileres activos.")
+    else:
+        print("\n--- Alquileres en curso ---")
+        for a in activos:
+            print(a)
+
+# --- Funciones de Reportes y Multas ---
+
+def _ver_multas() -> None:
+    """Muestra el histórico de todas las multas en el sistema."""
+    multas = _multa_service.listar_todas_las_multas()
+    if not multas:
+        print("\nNo hay multas registradas.")
+    else:
+        print("\n--- Historial de Multas ---")
+        for m in multas:
+            print(m)
+
+def _ver_historial_cliente() -> None:
+    """Muestra todos los alquileres (pasados y presentes) de un cliente."""
+    try:
+        id_cliente = int(input("ID del cliente: "))
+    except ValueError:
+        raise ValueError("El ID de cliente debe ser un número entero.")
+
+    historial = _alquiler_service.obtener_historial_cliente(id_cliente)
+    if not historial:
+        print("\nEste cliente no tiene alquileres registrados.")
+    else:
+        print(f"\n--- Historial del Cliente #{id_cliente} ---")
+        for h in historial:
+            print(h)

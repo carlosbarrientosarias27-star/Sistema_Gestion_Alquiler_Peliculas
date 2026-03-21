@@ -2,7 +2,7 @@ import sqlite3
 
 DB_NAME = "video_club.db"
 
-def obtener_conexion():
+def get_connection():
     """
     Abre conexión SQLite y activa claves foráneas.
     
@@ -19,7 +19,7 @@ def crear_tablas() -> None:
     Output:
         None
     """
-    conn = obtener_conexion()
+    conn = get_connection()
     cursor = conn.cursor()
 
     # Tabla Películas
