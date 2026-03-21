@@ -9,15 +9,14 @@ from .multa_service import MultaService
 
 
 class AlquilerService:
-    def __init__(self, multa_service: Optional[MultaService] = None):
+    def __init__(self, multa_service: MultaService, pelicula_repo, cliente_repo, alquiler_repo):
         """
-        Inicializa el servicio de alquileres.
-       
-        Input:
-            multa_service: Opcional, instancia de MultaService.
+        Inicializa el servicio de alquileres con sus dependencias inyectadas.
         """
-        self._multa_service = multa_service or MultaService()
-
+        self._multa_service = multa_service
+        self._pelicula_repo = pelicula_repo
+        self._cliente_repo = cliente_repo
+        self._alquiler_repo = alquiler_repo
 
     def alquilar_pelicula(self, id_cliente: int, codigo_pelicula: str, dias: int) -> Alquiler:
         """
@@ -35,110 +34,67 @@ class AlquilerService:
 
 
         with get_connection() as conn:
-            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
+            cursor.execute("SELECT * FROM alquileres...")
 
 
-            # 1. Buscar película y comprobar copias
-            cursor.execute("SELECT * FROM peliculas WHERE codigo = ?", (codigo_pelicula,))
-            fila_peli = cursor.fetchone()
-            if not fila_peli:
-                raise ValueError("Película no encontrada")
-            if fila_peli["copias_disponibles"] <= 0:
-                raise ValueError("No hay copias disponibles")
+           # 1. Buscar película y comprobar stock vía Repository
+        peli = self._pelicula_repo.obtener_por_codigo(codigo_pelicula)
+        if not peli:
+            raise ValueError("Película no encontrada")
+        if peli["copias_disponibles"] <= 0:
+            raise ValueError("No hay copias disponibles")
 
+        # 2. Buscar cliente vía Repository
+        if not self._cliente_repo.existe(id_cliente):
+            raise ValueError("Cliente no encontrado")
 
-            # 2. Buscar cliente
-            cursor.execute("SELECT id_cliente FROM clientes WHERE id_cliente = ?", (id_cliente,))
-            if not cursor.fetchone():
-                raise ValueError("Cliente no encontrado")
+        # 3. Calcular fechas
+        fecha_alquiler = date.today()
+        fecha_prevista = fecha_alquiler + timedelta(days=dias)
 
+        try:
+            # 4. Delegar persistencia al AlquilerRepository
+            id_generado = self._alquiler_repo.crear(
+                id_cliente, codigo_pelicula, fecha_alquiler, fecha_prevista
+            )
 
-            # 3. Calcular fechas
-            fecha_alquiler = date.today()
-            fecha_prevista = fecha_alquiler + timedelta(days=dias)
-
-
-            try:
-                # 4. Insertar alquiler
-                cursor.execute(
-                    """INSERT INTO alquileres (id_cliente, id_pelicula, fecha_alquiler, fecha_devolucion_prevista)
-                       VALUES (?, ?, ?, ?)""",
-                    (id_cliente, codigo_pelicula, fecha_alquiler.isoformat(), fecha_prevista.isoformat())
-                )
-                id_generado = cursor.lastrowid
-
-
-                # 5. Reducir stock
-                cursor.execute(
-                    "UPDATE peliculas SET copias_disponibles = copias_disponibles - 1 WHERE codigo = ?",
-                    (codigo_pelicula,)
-                )
-               
-                conn.commit()
-                return Alquiler(id_generado, id_cliente, codigo_pelicula, fecha_alquiler, fecha_prevista, None)
-           
-            except Exception as e:
-                conn.rollback()
-                raise e
+            # 5. Actualizar stock vía PeliculaRepository
+            self._pelicula_repo.reducir_stock(codigo_pelicula)
+            
+            return Alquiler(id_generado, id_cliente, codigo_pelicula, fecha_alquiler, fecha_prevista, None)
+       
+        except sqlite3.Error as e:
+            raise RuntimeError(f"Error crítico en la base de datos: {e}")
 
 
     def devolver_pelicula(self, id_alquiler: int, fecha_real: date) -> None:
         """
-        Registra la devolución y gestiona multas por retraso.
-       
-        Input:
-            id_alquiler: ID del registro de alquiler.
-            fecha_real: Fecha en la que se devuelve la película.
+        Registra la devolución delegando la persistencia a los repositorios.
         """
-        with get_connection() as conn:
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
+        # 1. Obtener datos del alquiler
+        alq = self._alquiler_repo.obtener_por_id(id_alquiler)
 
+        if not alq:
+            raise ValueError("Alquiler no encontrado")
+        if alq["fecha_devolucion_real"] is not None:
+            raise ValueError("Este alquiler ya fue devuelto previamente")
 
-            # 1. Buscar alquiler
-            cursor.execute("SELECT * FROM alquileres WHERE id_alquiler = ?", (id_alquiler,))
-            alq = cursor.fetchone()
+        try:
+            # 2. Actualizar fechas y stock mediante repositorios
+            self._alquiler_repo.registrar_devolucion(id_alquiler, fecha_real)
+            self._pelicula_repo.aumentar_stock(alq["id_pelicula"])
 
+            # 3. Lógica de Negocio: Gestión de multas
+            fecha_prevista = date.fromisoformat(alq["fecha_devolucion_prevista"])
+            dias_retraso = (fecha_real - fecha_prevista).days
 
-            if not alq:
-                raise ValueError("Alquiler no encontrado")
-            if alq["fecha_devolucion_real"] is not None:
-                raise ValueError("Ya fue devuelto")
-
-
-            try:
-                # 2. Actualizar fecha real
-                cursor.execute(
-                    "UPDATE alquileres SET fecha_devolucion_real = ? WHERE id_alquiler = ?",
-                    (fecha_real.isoformat(), id_alquiler)
-                )
-
-
-                # 3. Aumentar stock de la película
-                cursor.execute(
-                    "UPDATE peliculas SET copias_disponibles = copias_disponibles + 1 WHERE codigo = ?",
-                    (alq["id_pelicula"],)
-                )
-
-
-                # 4. Calcular retraso y multa
-                fecha_prevista = date.fromisoformat(alq["fecha_devolucion_prevista"])
-                dias_retraso = (fecha_real - fecha_prevista).days
-
-
-                mensaje = f"Devolución exitosa del alquiler #{id_alquiler}."
-                if dias_retraso > 0:
-                    self._multa_service.crear_multa(id_alquiler, dias_retraso)
-                    mensaje += f" ¡Atención! Generada multa por {dias_retraso} días de retraso."
-               
-                conn.commit()
-                print(mensaje)
-
-
-            except Exception as e:
-                conn.rollback()
-                raise e
+            if dias_retraso > 0:
+                self._multa_service.crear_multa(id_alquiler, dias_retraso)
+            
+            # Nota: El 'print' se elimina para mantener el servicio "mudo" (UI agnóstico)
+        except sqlite3.Error as e:
+            raise RuntimeError(f"Error al procesar la devolución: {e}")
 
 
     def listar_alquileres_activos(self) -> List[Alquiler]:
@@ -149,9 +105,8 @@ class AlquilerService:
             list[Alquiler]: Lista de objetos Alquiler activos.
         """
         with get_connection() as conn:
-            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM alquileres WHERE fecha_devolucion_real IS NULL")
+            cursor.execute("SELECT * FROM alquileres...")
             filas = cursor.fetchall()
            
             return [self._mapear_alquiler(f) for f in filas]
@@ -167,9 +122,8 @@ class AlquilerService:
             list[Alquiler]: Historial completo de alquileres.
         """
         with get_connection() as conn:
-            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM alquileres WHERE id_cliente = ?", (id_cliente,))
+            cursor.execute("SELECT * FROM alquileres...")
             filas = cursor.fetchall()
            
             return [self._mapear_alquiler(f) for f in filas]

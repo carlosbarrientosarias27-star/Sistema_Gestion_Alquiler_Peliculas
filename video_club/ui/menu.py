@@ -1,25 +1,46 @@
 import os
-import sys
 from datetime import date
-from typing import Callable, Any
+from typing import Callable
 
+# Importaciones limpias (sin duplicados)
+from repositories.pelicula_repository import PeliculaRepository
+from repositories.cliente_repository import ClienteRepository
+from repositories.alquiler_repository import AlquilerRepository
 
-# Importaciones ajustadas a la estructura que usa tu main.py
 from services.alquiler_service import AlquilerService
 from services.pelicula_service import PeliculaService
 from services.cliente_service import ClienteService
 from services.multa_service import MultaService
 
-
 class Menu:
     def __init__(self):
-        # Instanciación de servicios como atributos de clase
+        # 1. Instanciamos los Repositorios primero
+        self._pelicula_repo = PeliculaRepository()
+        self._cliente_repo = ClienteRepository()
+        self._alquiler_repo = AlquilerRepository()
+
+        # 2. Instanciamos los Servicios simples
         self._multa_service = MultaService()
         self._pelicula_service = PeliculaService()
         self._cliente_service = ClienteService()
-        self._alquiler_service = AlquilerService(multa_service=self._multa_service)
 
+        # 3. Instanciamos AlquilerService pasando TODO lo que pide
+        # El error indica que le faltan estos 3 argumentos:
+        self._alquiler_service = AlquilerService(
+            pelicula_repo=self._pelicula_repo,
+            cliente_repo=self._cliente_repo,
+            alquiler_repo=self._alquiler_repo,
+            multa_service=self._multa_service
+        )
 
+    def _leer_int(self, prompt: str) -> int:
+        """Helper para asegurar que la entrada sea un entero válido."""
+        while True:
+            try:
+                entrada = input(prompt).strip()
+                return int(entrada)
+            except ValueError:
+                print("\033[91m⚠️ Error: Por favor, introduce un número entero válido.\033[0m")
     def ejecutar(self) -> None:
         """Método principal llamado por main.py"""
         opciones: dict[str, Callable[[], None]] = {
@@ -74,7 +95,7 @@ class Menu:
         titulo = input("Título: ").strip()
         director = input("Director: ").strip()
         try:
-            copias = int(input("Número de copias: "))
+            copias = self._leer_int("Número de copias: ")
             self._pelicula_service.registrar_pelicula(codigo, titulo, director, copias)
             print("\n✅ Película añadida correctamente.")
         except ValueError:
@@ -102,9 +123,9 @@ class Menu:
 
     def _realizar_alquiler(self) -> None:
         try:
-            id_cli = int(input("ID Cliente: "))
+            id_cli = self._leer_int("ID Cliente: ")
             cod_peli = input("Código Película: ").strip()
-            dias = int(input("Días: "))
+            dias = self._leer_int("Días: ")
             alq = self._alquiler_service.alquilar_pelicula(id_cli, cod_peli, dias)
             print(f"\n✅ Alquiler OK: {alq}")
         except ValueError as e:
@@ -113,7 +134,7 @@ class Menu:
 
     def _realizar_devolucion(self) -> None:
         try:
-            id_alq = int(input("ID Alquiler: "))
+            id_alq = self._leer_int("ID Alquiler: ")
             self._alquiler_service.devolver_pelicula(id_alq, date.today())
             print("\n✅ Devolución procesada.")
         except ValueError as e:
@@ -132,7 +153,7 @@ class Menu:
 
     def _ver_historial_cliente(self) -> None:
         try:
-            id_cli = int(input("ID Cliente: "))
+            id_cli = self._leer_int("ID Cliente: ")
             hist = self._alquiler_service.obtener_historial_cliente(id_cli)
             for h in hist: print(h)
         except ValueError as e:

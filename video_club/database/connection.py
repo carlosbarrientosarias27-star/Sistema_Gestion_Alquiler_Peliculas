@@ -3,15 +3,11 @@ import sqlite3
 DB_NAME = "video_club.db"
 
 def get_connection():
-    """
-    Abre conexión SQLite y activa claves foráneas.
-    
-    Output:
-        sqlite3.Connection: Objeto de conexión configurado.
-    """
     conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row # Configurado una sola vez
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
+
 def crear_tablas() -> None:
     """
     Crea las 4 tablas necesarias para el sistema si no existen.
