@@ -1,10 +1,12 @@
 import sqlite3
 from datetime import date, timedelta
-from typing import Optional, List
+from typing import List, Optional
 
-from database.connection import get_connection
-from video_club.models.alquiler import Alquiler
-from .multa_service import MultaService
+# CAMBIO: Importar desde la ruta raíz que entiende tu main.py
+from models.alquiler import Alquiler
+from database.connection import get_connection  # Asegúrate de usar get_connection
+from services.pelicula_service import PeliculaService
+from services.multa_service import MultaService
 
 class AlquilerService:
     def __init__(self, multa_service: Optional[MultaService] = None):

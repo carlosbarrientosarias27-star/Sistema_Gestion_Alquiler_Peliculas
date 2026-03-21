@@ -1,8 +1,11 @@
 import sys
 import os
 
-# Añadimos el directorio padre al path para que reconozca los paquetes
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Esto permite que los archivos dentro de video_club se vean entre sí
+# como 'models', 'services', etc.
+directorio_actual = os.path.dirname(os.path.abspath(__file__))
+if directorio_actual not in sys.path:
+    sys.path.append(directorio_actual)
 
 from database.init_db import init_db
 from ui.menu import Menu
