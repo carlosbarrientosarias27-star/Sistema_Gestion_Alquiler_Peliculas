@@ -26,3 +26,7 @@ class Multa:
     def __repr__(self) -> str:
         """Formato: Multa #1 | Alquiler #2 | 3 días | 4.50€"""
         return f"Multa #{self.id_multa} | Alquiler #{self.id_alquiler} | {self.dias_retraso} días | {self.importe:.2f}€"
+    
+    @classmethod
+    def from_row(cls, row: sqlite3.Row):
+         return cls(**dict(row))

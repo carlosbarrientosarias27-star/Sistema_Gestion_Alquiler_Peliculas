@@ -29,3 +29,7 @@ class Alquiler:
 
     def __repr__(self) -> str:
         return f"Alquiler #{self.id_alquiler} | Cliente {self.id_cliente} | Pelicula {self.codigo_pelicula}"
+    
+    @classmethod
+    def from_row(cls, row: sqlite3.Row):
+        return cls(**dict(row))
