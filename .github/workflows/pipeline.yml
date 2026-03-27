@@ -25,7 +25,8 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Run DB Init
-      run: python video_club/database/init_db.py
+      run: python database/init_db.py
+      working-directory: ./video_club
 
     - name: Ejecutar Tests con Pytest
       run: |

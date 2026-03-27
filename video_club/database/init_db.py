@@ -1,4 +1,4 @@
-from .connection import get_connection  # Change this line
+from database.connection import get_connection  # Change this line
 
 def init_db() -> None:
     """Crea las tablas necesarias si no existen.
