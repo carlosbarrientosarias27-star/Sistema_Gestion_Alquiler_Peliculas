@@ -3,10 +3,10 @@ from datetime import date, timedelta
 from typing import Optional, List
 
 
-from database.connection import get_connection
-from models.alquiler import Alquiler
-from models.multa import Multa
-from .multa_service import MultaService
+from ..database.connection import get_connection
+from ..models.alquiler import Alquiler
+from ..models.multa import Multa
+from multa_service import MultaService
 
 
 class AlquilerService:

@@ -1,6 +1,6 @@
 import sqlite3
 from typing import Optional, List
-from database.connection import get_connection
+from ..database.connection import get_connection
 from models.multa import Multa
 
 
