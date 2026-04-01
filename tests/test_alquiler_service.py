@@ -2,7 +2,6 @@ import pytest
 import sqlite3
 from datetime import datetime, timedelta
 from video_club.services.alquiler_service import AlquilerService
-import pytest
 
 
 @pytest.fixture
