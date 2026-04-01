@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import MagicMock
 from datetime import date, timedelta
 from video_club.services.alquiler_service import AlquilerService
-from models.alquiler import Alquiler  # Importante para validaciones
+from video_club.models.alquiler import Alquiler  # Importante para validaciones
 
 # --- 1. Fixtures con Mocks ---
 

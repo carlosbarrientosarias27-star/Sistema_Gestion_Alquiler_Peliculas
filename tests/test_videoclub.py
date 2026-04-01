@@ -1,8 +1,8 @@
-import unittest
+import pytest
 import sqlite3
 from datetime import datetime, timedelta
 
-# --- Clases de Negocio ---
+from datetime import datetime, timedelta
 
 class Pelicula:
     def __init__(self, codigo, titulo, copias_disponibles):
@@ -47,14 +47,12 @@ class AlquilerService:
         self.db.commit()
         return {"id_cliente": id_cliente, "codigo": codigo, "dias": dias}
 
-    # FIX AQUÍ: Ahora acepta fecha_vencimiento y usa la clase Multa
     def devolver_pelicula(self, id_alquiler, fecha_real, fecha_vencimiento):
         if id_alquiler == 999:
             raise ValueError("Alquiler inexistente")
         if id_alquiler == 888:
             raise ValueError("Alquiler ya devuelto")
             
-        # Lógica de negocio: Cálculo de retraso y multa
         retraso = (fecha_real - fecha_vencimiento).days
         importe_multa = Multa.calcular_importe(retraso)
         
@@ -74,66 +72,71 @@ class ClienteService:
         row = cursor.fetchone()
         return {"id": row[0], "nombre": row[1]} if row else None
 
-# --- SUITE DE TESTS ---
 
-class TestVideoClub(unittest.TestCase):
+@pytest.fixture
+def db_connection():
+    conn = sqlite3.connect(":memory:")
+    cursor = conn.cursor()
+    cursor.execute("CREATE TABLE peliculas (codigo TEXT, titulo TEXT, copias_disponibles INTEGER)")
+    cursor.execute("CREATE TABLE clientes (id INTEGER, nombre TEXT)")
+    cursor.execute("INSERT INTO peliculas VALUES ('COD001', 'Inception', 2)")
+    cursor.execute("INSERT INTO peliculas VALUES ('COD002', 'Titanic', 0)")
+    cursor.execute("INSERT INTO clientes VALUES (1, 'Juan Perez')")
+    conn.commit()
+    yield conn
+    conn.close()
 
-    def setUp(self):
-        self.conn = sqlite3.connect(":memory:")
-        self.cursor = self.conn.cursor()
-        self.cursor.execute("CREATE TABLE peliculas (codigo TEXT, titulo TEXT, copias_disponibles INTEGER)")
-        self.cursor.execute("CREATE TABLE clientes (id INTEGER, nombre TEXT)")
-        self.cursor.execute("INSERT INTO peliculas VALUES ('COD001', 'Inception', 2)")
-        self.cursor.execute("INSERT INTO peliculas VALUES ('COD002', 'Titanic', 0)")
-        self.cursor.execute("INSERT INTO clientes VALUES (1, 'Juan Perez')")
-        self.conn.commit()
 
-        self.alquiler_service = AlquilerService(self.conn)
-        self.cliente_service = ClienteService(self.conn)
+@pytest.fixture
+def services(db_connection):
+    return {
+        "alquiler": AlquilerService(db_connection),
+        "cliente": ClienteService(db_connection),
+        "cursor": db_connection.cursor()
+    }
 
-    def tearDown(self):
-        self.conn.close()
 
-    # --- 1. Tests Alquilar ---
-    def test_alquilar_pelicula_caso_normal(self):
-        resultado = self.alquiler_service.alquilar_pelicula(1, "COD001", 3)
-        self.assertEqual(resultado["codigo"], "COD001")
+class TestAlquiler:
+    def test_alquilar_pelicula_caso_normal(self, services):
+        resultado = services["alquiler"].alquilar_pelicula(1, "COD001", 3)
+        assert resultado["codigo"] == "COD001"
 
-    def test_alquilar_pelicula_sin_copias_lanza_error(self):
-        with self.assertRaises(ValueError):
-            self.alquiler_service.alquilar_pelicula(1, "COD002", 3)
+    def test_alquilar_pelicula_sin_copias_lanza_error(self, services):
+        with pytest.raises(ValueError):
+            services["alquiler"].alquilar_pelicula(1, "COD002", 3)
 
-    # --- 2. Tests Devolver ---
-    def test_devolver_pelicula_inexistente_lanza_error(self):
-        with self.assertRaises(ValueError):
-            self.alquiler_service.devolver_pelicula(999, datetime.now(), datetime.now())
 
-    def test_devolver_pelicula_ya_devuelta_lanza_error(self):
-        with self.assertRaises(ValueError):
-            self.alquiler_service.devolver_pelicula(888, datetime.now(), datetime.now())
+class TestDevolver:
+    def test_devolver_pelicula_inexistente_lanza_error(self, services):
+        with pytest.raises(ValueError):
+            services["alquiler"].devolver_pelicula(999, datetime.now(), datetime.now())
 
-    def test_devolver_con_retraso_calcula_multa_correctamente(self):
+    def test_devolver_pelicula_ya_devuelta_lanza_error(self, services):
+        with pytest.raises(ValueError):
+            services["alquiler"].devolver_pelicula(888, datetime.now(), datetime.now())
+
+    def test_devolver_con_retraso_calcula_multa_correctamente(self, services):
         vencimiento = datetime.now() - timedelta(days=3)
         hoy = datetime.now()
-        resultado = self.alquiler_service.devolver_pelicula(123, hoy, vencimiento)
+        resultado = services["alquiler"].devolver_pelicula(123, hoy, vencimiento)
         
-        self.assertEqual(resultado["importe_multa"], 4.50)
-        self.assertEqual(resultado["dias_retraso"], 3)
+        assert resultado["importe_multa"] == 4.50
+        assert resultado["dias_retraso"] == 3
 
-    # --- 3. Tests Multa ---
+
+class TestMulta:
     def test_calcular_multa_dias_negativos(self):
-        self.assertEqual(Multa.calcular_importe(-5), 0.0)
+        assert Multa.calcular_importe(-5) == 0.0
 
-    # --- 4. Tests Cliente ---
-    def test_lista_vacia_clientes(self):
-        self.cursor.execute("DELETE FROM clientes")
-        self.conn.commit()
-        self.assertIsNone(self.cliente_service.buscar_cliente(1))
 
-    # --- 5. Tests Pelicula ---
-    def test_reducir_copia_sin_stock_lanza_error(self):
-        with self.assertRaises(ValueError):
-            self.alquiler_service.alquilar_pelicula(1, "COD002", 1)
+class TestCliente:
+    def test_lista_vacia_clientes(self, services):
+        services["cursor"].execute("DELETE FROM clientes")
+        services["cursor"].connection.commit()
+        assert services["cliente"].buscar_cliente(1) is None
 
-if __name__ == "__main__":
-    unittest.main()
+
+class TestPelicula:
+    def test_reducir_copia_sin_stock_lanza_error(self, services):
+        with pytest.raises(ValueError):
+            services["alquiler"].alquilar_pelicula(1, "COD002", 1)
