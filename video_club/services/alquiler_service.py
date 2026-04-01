@@ -3,9 +3,9 @@ from datetime import date, timedelta
 from typing import Optional, List
 
 
-from ..database.connection import get_connection
-from ..models.alquiler import Alquiler
-from ..models.multa import Multa
+from video_club.database.connection import get_connection
+from video_club.models.alquiler import Alquiler
+from video_club.models.multa import Multa
 from video_club.services.multa_service import MultaService
 
 

@@ -1,7 +1,7 @@
 import sqlite3
 from typing import Optional, List
 from ..database.connection import get_connection
-from models.multa import Multa
+from video_club.models.multa import Multa
 
 
 class MultaService:
