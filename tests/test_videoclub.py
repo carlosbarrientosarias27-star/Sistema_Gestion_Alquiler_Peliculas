@@ -2,7 +2,6 @@ import pytest
 import sqlite3
 from datetime import datetime, timedelta
 
-from datetime import datetime, timedelta
 
 class Pelicula:
     def __init__(self, codigo, titulo, copias_disponibles):
