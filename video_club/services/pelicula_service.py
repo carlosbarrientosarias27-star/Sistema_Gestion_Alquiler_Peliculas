@@ -1,6 +1,6 @@
 from typing import Optional
-from models.pelicula import Pelicula
-from database.connection import get_connection
+from video_club.models.pelicula import Pelicula
+from video_club.database.connection import get_connection
 
 class PeliculaService:
     def registrar_pelicula(self, codigo: str, titulo: str, director: str, copias: int) -> None:

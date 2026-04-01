@@ -1,5 +1,5 @@
 from database.connection import get_connection
-from models.alquiler import Alquiler
+from video_club.models.alquiler import Alquiler
 
 class AlquilerRepository:
     def crear(self, id_cliente: int, codigo_pelicula: str, fecha_alquiler, fecha_prevista):

@@ -1,5 +1,5 @@
 from database.connection import get_connection
-from models.pelicula import Pelicula
+from video_club.models.pelicula import Pelicula
 
 class PeliculaRepository:
     def save(self, pelicula: Pelicula):
