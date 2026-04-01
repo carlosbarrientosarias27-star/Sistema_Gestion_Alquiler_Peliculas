@@ -41,13 +41,13 @@ def crear_tablas() -> None:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS alquileres (
         id_alquiler INTEGER PRIMARY KEY AUTOINCREMENT,
-        id_cliente INTEGER,
-        id_pelicula TEXT,
+        id_cliente INTEGER NOT NULL,
+        codigo_pelicula TEXT NOT NULL,
         fecha_alquiler TEXT NOT NULL,
         fecha_devolucion_prevista TEXT NOT NULL,
         fecha_devolucion_real TEXT DEFAULT NULL,
         FOREIGN KEY(id_cliente) REFERENCES clientes(id_cliente),
-        FOREIGN KEY(id_pelicula) REFERENCES peliculas(codigo)
+        FOREIGN KEY(codigo_pelicula) REFERENCES peliculas(codigo)
     )
     """)
 
