@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import MagicMock
 from datetime import date, timedelta
-from video_club.services.alquiler_service import AlquilerService
-from video_club.models.alquiler import Alquiler
+from services.alquiler_service import AlquilerService
+from models.alquiler import Alquiler
 
 # --- 1. Fixtures para dependencias ---
 

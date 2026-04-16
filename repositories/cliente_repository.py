@@ -1,5 +1,5 @@
 from database.connection import get_connection
-from video_club.models.cliente import Cliente
+from models.cliente import Cliente
 
 class ClienteRepository:
     def save(self, cliente: Cliente):

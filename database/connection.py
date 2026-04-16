@@ -9,19 +9,13 @@ def get_connection():
     return conn
 
 def crear_tablas() -> None:
-    """
-    Crea las 4 tablas necesarias para el sistema si no existen.
-    
-    Output:
-        None
-    """
     conn = get_connection()
     cursor = conn.cursor()
 
     # Tabla Películas
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS peliculas (
-        codigo TEXT PRIMARY KEY,
+        id_pelicula INTEGER PRIMARY KEY AUTOINCREMENT, 
         titulo TEXT NOT NULL,
         director TEXT NOT NULL,
         copias_disponibles INTEGER DEFAULT 0
@@ -37,17 +31,17 @@ def crear_tablas() -> None:
     )
     """)
 
-    # Tabla Alquileres
+    # Tabla Alquileres (CORREGIDA)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS alquileres (
         id_alquiler INTEGER PRIMARY KEY AUTOINCREMENT,
         id_cliente INTEGER NOT NULL,
-        codigo_pelicula TEXT NOT NULL,
+        id_pelicula INTEGER NOT NULL,
         fecha_alquiler TEXT NOT NULL,
         fecha_devolucion_prevista TEXT NOT NULL,
         fecha_devolucion_real TEXT DEFAULT NULL,
         FOREIGN KEY(id_cliente) REFERENCES clientes(id_cliente),
-        FOREIGN KEY(codigo_pelicula) REFERENCES peliculas(codigo)
+        FOREIGN KEY(id_pelicula) REFERENCES peliculas(id_pelicula) 
     )
     """)
 

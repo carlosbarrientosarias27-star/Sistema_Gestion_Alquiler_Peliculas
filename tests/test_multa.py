@@ -1,5 +1,5 @@
 import pytest
-from video_club.models.multa import Multa
+from models.multa import Multa
 
 # --- Tests para el método estático calcular_importe ---
 

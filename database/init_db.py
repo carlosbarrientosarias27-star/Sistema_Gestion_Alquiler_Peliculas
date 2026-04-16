@@ -11,7 +11,7 @@ def init_db() -> None:
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS peliculas (
-        ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_pelicula INTEGER PRIMARY KEY AUTOINCREMENT,
         titulo TEXT,
         director TEXT,
         copias_disponibles INTEGER
@@ -34,8 +34,8 @@ def init_db() -> None:
         fecha_alquiler TEXT,
         fecha_devolucion_prevista TEXT,
         fecha_devolucion_real TEXT,
-        FOREIGN KEY (id_cliente) REFERENCES clientes(id),
-        FOREIGN KEY (id_pelicula) REFERENCES peliculas(id)
+        FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente),
+        FOREIGN KEY (id_pelicula) REFERENCES peliculas(id_pelicula)
     )
     """)
 

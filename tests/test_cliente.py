@@ -1,5 +1,5 @@
 import pytest
-from video_club.models.cliente import Cliente
+from models.cliente import Cliente
 
 # --- Fixtures ---
 

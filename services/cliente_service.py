@@ -1,6 +1,6 @@
 from typing import Optional
-from video_club.models.cliente import Cliente
-from video_club.database.connection import get_connection
+from models.cliente import Cliente
+from database.connection import get_connection
 
 class ClienteService:
     def registrar_cliente(self, nombre: str, email: str) -> int:

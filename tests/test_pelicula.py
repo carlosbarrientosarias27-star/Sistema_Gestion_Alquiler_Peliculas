@@ -1,5 +1,5 @@
 import pytest
-from video_club.models.pelicula import Pelicula
+from models.pelicula import Pelicula
 
 # --- Fixtures ---
 
@@ -7,7 +7,7 @@ from video_club.models.pelicula import Pelicula
 def pelicula_valida():
     """Retorna una instancia de Pelicula con stock inicial."""
     return Pelicula(
-        codigo="COD001",
+        id_peliculas="COD001",
         titulo="Inception",
         director="Christopher Nolan",
         copias_disponibles=2
@@ -22,7 +22,7 @@ def pelicula_sin_stock():
 
 def test_creacion_pelicula(pelicula_valida):
     """Verifica que los atributos se asignen correctamente al crear la instancia."""
-    assert pelicula_valida.codigo == "COD001"
+    assert pelicula_valida.id_peliculas == "COD001"
     assert pelicula_valida.titulo == "Inception"
     assert pelicula_valida.copias_disponibles == 2
 
