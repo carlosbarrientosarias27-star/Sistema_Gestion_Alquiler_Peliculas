@@ -14,7 +14,7 @@ def cliente_service():
 
 def test_registrar_cliente_exitoso(cliente_service):
     """Verifica que el registro devuelva el ID generado correctamente."""
-    with patch('services.cliente_service.o') as mock_conn:
+    with patch('services.cliente_service.obtener_conexion') as mock_conn:
         # Configurar el mock de la conexión y cursor
         mock_cursor = MagicMock()
         mock_conn.return_value.cursor.return_value = mock_cursor
@@ -35,7 +35,7 @@ def test_registrar_cliente_vacio_lanza_error(cliente_service):
 
 def test_buscar_cliente_existente(cliente_service):
     """Verifica que devuelva un objeto Cliente si se encuentra en la BD."""
-    with patch('services.cliente_service.get_connection') as mock_conn:
+    with patch('services.cliente_service.obtener_conexion') as mock_conn:
         mock_cursor = MagicMock()
         mock_conn.return_value.cursor.return_value = mock_cursor
         # Simular fila devuelta por la base de datos
@@ -49,7 +49,7 @@ def test_buscar_cliente_existente(cliente_service):
 
 def test_buscar_cliente_no_existente(cliente_service):
     """Debe devolver None si el ID no existe."""
-    with patch('services.cliente_service.get_connection') as mock_conn:
+    with patch('services.cliente_service.obtener_conexion') as mock_conn:
         mock_conn.return_value.cursor.return_value.fetchone.return_value = None
         
         cliente = cliente_service.buscar_cliente(999)
@@ -60,7 +60,7 @@ def test_buscar_cliente_no_existente(cliente_service):
 
 def test_listar_clientes_vacio(cliente_service):
     """Verifica que devuelva una lista vacía si no hay registros."""
-    with patch('services.cliente_service.get_connection') as mock_conn:
+    with patch('services.cliente_service.obtener_conexion') as mock_conn:
         mock_conn.return_value.cursor.return_value.fetchall.return_value = []
         
         lista = cliente_service.listar_clientes()
@@ -70,7 +70,7 @@ def test_listar_clientes_vacio(cliente_service):
 
 def test_listar_clientes_con_datos(cliente_service):
     """Verifica que convierta todas las filas de la BD en objetos Cliente."""
-    with patch('services.cliente_service.get_connection') as mock_conn:
+    with patch('services.cliente_service.obtener_conexion') as mock_conn:
         mock_conn.return_value.cursor.return_value.fetchall.return_value = [
             (1, "A", "a@mail.com"),
             (2, "B", "b@mail.com")

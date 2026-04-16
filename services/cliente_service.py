@@ -7,7 +7,7 @@ class ClienteService:
         if not nombre or not email:
             raise ValueError("Nombre y email son obligatorios.")
         
-        conn = ob()
+        conn = obtener_conexion()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO clientes (nombre, email) VALUES (?, ?)", (nombre, email))
         id_generado = cursor.lastrowid
