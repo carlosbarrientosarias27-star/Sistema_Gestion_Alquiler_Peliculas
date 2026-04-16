@@ -91,12 +91,12 @@ class Menu:
 
 
     def _añadir_pelicula(self) -> None:
-        codigo = input("Código: ").strip()
+        id = input("id: ").strip()
         titulo = input("Título: ").strip()
         director = input("Director: ").strip()
         try:
             copias = self._leer_int("Número de copias: ")
-            self._pelicula_service.registrar_pelicula(codigo, titulo, director, copias)
+            self._pelicula_service.registrar_pelicula(id, titulo, director, copias)
             print("\n✅ Película añadida correctamente.")
         except ValueError:
             print("\n❌ Error: Las copias deben ser un número.")
@@ -124,9 +124,9 @@ class Menu:
     def _realizar_alquiler(self) -> None:
         try:
             id_cli = self._leer_int("ID Cliente: ")
-            cod_peli = input("Código Película: ").strip()
+            id_peli = input("id Película: ").strip()
             dias = self._leer_int("Días: ")
-            alq = self._alquiler_service.alquilar_pelicula(id_cli, cod_peli, dias)
+            alq = self._alquiler_service.alquilar_pelicula(id_cli, id_peli, dias)
             print(f"\n✅ Alquiler OK: {alq}")
         except ValueError as e:
             print(f"\n❌ Error: {e}")

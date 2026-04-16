@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Pelicula:
-    codigo: str
+    id: int
     titulo: str
     director: str
     copias_disponibles: int
