@@ -30,7 +30,7 @@ def init_db() -> None:
     CREATE TABLE IF NOT EXISTS alquileres (
         id_alquiler INTEGER PRIMARY KEY AUTOINCREMENT,
         id_cliente INTEGER,
-        id_pelicula INT,
+        id_pelicula INTEGER,
         fecha_alquiler TEXT,
         fecha_devolucion_prevista TEXT,
         fecha_devolucion_real TEXT,
