@@ -14,7 +14,7 @@ def cliente_service():
 
 def test_registrar_cliente_exitoso(cliente_service):
     """Verifica que el registro devuelva el ID generado correctamente."""
-    with patch('services.cliente_service.get_connection') as mock_conn:
+    with patch('services.cliente_service.o') as mock_conn:
         # Configurar el mock de la conexión y cursor
         mock_cursor = MagicMock()
         mock_conn.return_value.cursor.return_value = mock_cursor
