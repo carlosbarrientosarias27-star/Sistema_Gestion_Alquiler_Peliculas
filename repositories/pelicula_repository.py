@@ -2,12 +2,12 @@ from database.connection import get_connection
 from models.pelicula import Pelicula
 
 class PeliculaRepository:
-    def save(self, pelicula: Pelicula):
+    def guardar(self, pelicula: Pelicula):
         """Guarda una nueva película en la base de datos."""
         with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO peliculas (codigo, titulo, director, copias_disponibles) VALUES (?, ?, ?, ?)",
+                "INSERT INTO peliculas (id_pelicula, titulo, director, copias_disponibles) VALUES (?, ?, ?, ?)",
                 (pelicula.codigo, pelicula.titulo, pelicula.director, pelicula.copias_disponibles)
             )
             conn.commit()
@@ -16,11 +16,11 @@ class PeliculaRepository:
         """Busca una película por su código único."""
         with get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM peliculas WHERE codigo = ?", (codigo,))
+            cursor.execute("SELECT * FROM peliculas WHERE id = ?", (id,))
             row = cursor.fetchone()
             if row:
                 return {
-                    "codigo": row["codigo"],
+                    "id_pelicula": row["id"],
                     "titulo": row["titulo"],
                     "director": row["director"],
                     "copias_disponibles": row["copias_disponibles"]
@@ -32,7 +32,7 @@ class PeliculaRepository:
         with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE peliculas SET copias_disponibles = copias_disponibles - 1 WHERE codigo = ?",
+                "UPDATE peliculas SET copias_disponibles = copias_disponibles - 1 WHERE id = ?",
                 (codigo,)
             )
             conn.commit()
@@ -42,15 +42,15 @@ class PeliculaRepository:
         with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE peliculas SET copias_disponibles = copias_disponibles + 1 WHERE codigo = ?",
-                (codigo,)
+                "UPDATE peliculas SET copias_disponibles = copias_disponibles + 1 WHERE id = ?",
+                (id,)
             )
             conn.commit()
 
-    def get_all(self):
+    def obtener_todos(self):
         """Devuelve una lista de todas las películas."""
         with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM peliculas")
             rows = cursor.fetchall()
-            return [Pelicula(row["codigo"], row["titulo"], row["director"], row["copias_disponibles"]) for row in rows]
+            return [Pelicula(row["id_pelicula"], row["titulo"], row["director"], row["copias_disponibles"]) for row in rows]

@@ -20,7 +20,7 @@ class AlquilerRepository:
             cursor.execute("SELECT * FROM alquileres WHERE id_alquiler = ?", (id_alquiler,))
             return cursor.fetchone()
 
-    def find_active_by_cliente(self, id_cliente: int):
+    def buscar_activos_por_cliente(self, id_cliente: int):
         """Obtiene alquileres que aún no han sido devueltos."""
         with get_connection() as conn:
             cursor = conn.cursor()
