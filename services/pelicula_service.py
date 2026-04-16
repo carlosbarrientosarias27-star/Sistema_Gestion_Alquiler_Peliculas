@@ -6,7 +6,7 @@ class PeliculaService:
     def registrar_pelicula(self, id_pelicula: int, titulo: str, director: str, copias: int) -> None:
         if copias < 0:
             raise ValueError("Las copias no pueden ser negativas.")
-        if self.buscar_por_codigo(id):
+        if self.buscar_por_codigo(id_pelicula):
             raise ValueError(f"Ya existe una película con el código {id_pelicula}.")
         
         conn = obtener_conexion()
