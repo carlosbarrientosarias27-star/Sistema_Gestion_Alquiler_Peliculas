@@ -7,7 +7,7 @@ from models.pelicula import Pelicula
 def pelicula_valida():
     """Retorna una instancia de Pelicula con stock inicial."""
     return Pelicula(
-        id_peliculas="COD001",
+        id_pelicula="COD001",
         titulo="Inception",
         director="Christopher Nolan",
         copias_disponibles=2
@@ -22,7 +22,7 @@ def pelicula_sin_stock():
 
 def test_creacion_pelicula(pelicula_valida):
     """Verifica que los atributos se asignen correctamente al crear la instancia."""
-    assert pelicula_valida.id_peliculas == "COD001"
+    assert pelicula_valida.id_pelicula == "COD001"
     assert pelicula_valida.titulo == "Inception"
     assert pelicula_valida.copias_disponibles == 2
 
