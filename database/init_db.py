@@ -57,8 +57,3 @@ def init_db() -> None:
 
     conn.commit()
     conn.close()
-
-# These lines must have NO indentation (start at the very beginning of the line)
-if __name__ == "__main__":
-    init_db()
-    print("Database initialized successfully!")
