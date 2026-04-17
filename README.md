@@ -92,7 +92,7 @@ video_club/
 |    └── test_cliente.py
 |    └── test_multa.py
 |    └── test_pelicula.py
-|    └── test_videoclub.py       # Suite de tests con pytest
+|    └── test_videoclub.py      # Suite de tests con pytest
 └── main.py                     # Punto de entrada de la aplicación
 ```
 
