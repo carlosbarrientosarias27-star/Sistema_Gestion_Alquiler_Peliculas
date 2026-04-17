@@ -20,7 +20,7 @@ def test_registrar_cliente_exitoso(cliente_service):
         mock_conn.return_value.cursor.return_value = mock_cursor
         mock_cursor.lastrowid = 10  # Simular ID generado
         
-        id_gen = cliente_service.registrar_cliente("Ana Garcia", "ana@mail.com")
+        id_gen = cliente_service.registrar_clientes("Ana Garcia", "ana@mail.com")
         
         assert id_gen == 10
         mock_cursor.execute.assert_called_once()
@@ -29,7 +29,7 @@ def test_registrar_cliente_exitoso(cliente_service):
 def test_registrar_cliente_vacio_lanza_error(cliente_service):
     """Debe lanzar ValueError si faltan datos obligatorios."""
     with pytest.raises(ValueError, match="Nombre y email son obligatorios."):
-        cliente_service.registrar_cliente("", "mail@mail.com")
+        cliente_service.registrar_clientes("", "mail@mail.com")
 
 # --- 3. Tests para buscar_cliente ---
 
@@ -41,7 +41,7 @@ def test_buscar_cliente_existente(cliente_service):
         # Simular fila devuelta por la base de datos
         mock_cursor.fetchone.return_value = (1, "Juan Perez", "juan@mail.com")
         
-        cliente = cliente_service.buscar_cliente(1)
+        cliente = cliente_service.buscar_clientes(1)
         
         assert isinstance(cliente, Cliente)
         assert cliente.id_cliente == 1
@@ -52,7 +52,7 @@ def test_buscar_cliente_no_existente(cliente_service):
     with patch('services.cliente_service.obtener_conexion') as mock_conn:
         mock_conn.return_value.cursor.return_value.fetchone.return_value = None
         
-        cliente = cliente_service.buscar_cliente(999)
+        cliente = cliente_service.buscar_clientes(999)
         
         assert cliente is None
 

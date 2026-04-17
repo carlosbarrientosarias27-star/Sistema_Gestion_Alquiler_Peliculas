@@ -36,7 +36,7 @@ def test_alquilar_pelicula_exitoso(alquiler_service, mocks):
     mocks["alqu_repo"].crear.return_value = 1  # ID del nuevo alquiler
 
     # Ejecución
-    resultado = alquiler_service.alquilar_pelicula(id_cliente=10, id_pelicula="COD1", dias=3)
+    resultado = alquiler_service.alquilar_peliculas(id_cliente=10, id_pelicula="COD1", dias=3)
 
     # Verificaciones
     assert isinstance(resultado, Alquiler)
@@ -48,7 +48,7 @@ def test_alquilar_pelicula_sin_stock_lanza_error(alquiler_service, mocks):
     mocks["peli_repo"].obtener_por_codigo.return_value = {"codigo": "COD2", "copias_disponibles": 0}
     
     with pytest.raises(ValueError, match="No hay copias disponibles"):
-        alquiler_service.alquilar_pelicula(1, "COD2", 3)
+        alquiler_service.alquilar_peliculas(1, "COD2", 3)
 
 # --- 3. Tests para devolver_pelicula ---
 
@@ -64,7 +64,7 @@ def test_devolver_con_retraso_genera_multa(alquiler_service, mocks):
     }
 
     # Ejecución (devolución hoy)
-    resultado = alquiler_service.devolver_pelicula(id_alquiler=5, fecha_real=date.today())
+    resultado = alquiler_service.devolver_peliculas(id_alquiler=5, fecha_real=date.today())
 
     # Verificaciones
     assert resultado["dias_retraso"] == 2
@@ -80,7 +80,7 @@ def test_devolver_pelicula_ya_devuelta_lanza_error(alquiler_service, mocks):
     }
 
     with pytest.raises(ValueError, match="Alquiler ya devuelto"):
-        alquiler_service.devolver_pelicula(5)
+        alquiler_service.devolver_peliculas(5)
 
 # --- 4. Tests de Listado e Historial ---
 
@@ -96,7 +96,7 @@ def test_obtener_historial_cliente(alquiler_service, mocks):
         "fecha_devolucion_real": None
     }]
 
-    historial = alquiler_service.obtener_historial_cliente(10)
+    historial = alquiler_service.obtener_historial_clientes(10)
 
     assert len(historial) == 1
     assert isinstance(historial[0], Alquiler)
